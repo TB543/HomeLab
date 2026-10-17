@@ -40,8 +40,8 @@ EOF
 
 # sets up remote connection
 curl -fsSL https://tailscale.com/install.sh | sh
-sudo tailscale set --advertise-exit-node
 sudo tailscale up
+sudo tailscale set --advertise-exit-node
 
 # sets up home automation
 cd ../services/home-automation
