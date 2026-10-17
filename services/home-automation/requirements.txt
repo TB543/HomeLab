@@ -1,1 +1,2 @@
 python-kasa==0.11.0.1
+rpi-lgpio==0.6
