@@ -1,0 +1,17 @@
+services:
+  mc:
+    image: itzg/minecraft-server:java25
+    tty: true
+    stdin_open: true
+    ports:
+      - "25565:25565"
+    environment:
+      EULA: "TRUE"
+      TYPE: "FABRIC"
+      VERSION: "26.3"
+      MEMORY: "12288M"
+      ICON: "/data/server-icon.png"
+      OVERRIDE_ICON: "true"
+      TZ: "America/New_York"
+    volumes:
+      - "./data:/data"

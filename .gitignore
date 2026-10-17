@@ -221,3 +221,4 @@ __marimo__/
 
 # homelab user config
 services/home-automation/settings.json
+services/minecraft-server/data

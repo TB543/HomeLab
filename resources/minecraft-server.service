@@ -1,0 +1,14 @@
+[Unit]
+Description=Minecraft Fabric Server
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/docker-compose up
+ExecStop=/usr/bin/docker-compose stop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

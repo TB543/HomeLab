@@ -10,6 +10,7 @@ read -p "Enter WiFi password: " WIFI_PASS
 # creates system services to run everything
 sudo cp cec-name.service /etc/systemd/system/
 sudo cp home-automation.service /etc/systemd/system/
+sudo cp minecraft-server.service /etc/systemd/system/
 
 # sets up the pi as a wifi access point
 sudo nmcli connection add type wifi ifname wlan0 con-name HomeLab ssid "$WIFI_SSID"
@@ -37,6 +38,10 @@ port=0
 dhcp-option=6,10.69.67.1
 EOF
 
+# sets up remote connection
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+
 # sets up home automation
 cd ../services/home-automation
 python -m venv --system-site-packages venv
@@ -45,9 +50,14 @@ venv/bin/python main.py "$KASA_USER" "$KASA_PASS"
 sudo sed -i "/^\[Service\]/a WorkingDirectory=$(pwd)\nExecStart=$(pwd)/venv/bin/python $(pwd)/main.py" /etc/systemd/system/home-automation.service
 
 # sets up minecraft server
+cd ../minecraft-server
+sudo apt install -y docker-compose
+curl -fsSL https://packages.playit.gg/install.sh | bash
+sudo sed -i "/^\[Service\]/a WorkingDirectory=$(pwd)" /etc/systemd/system/minecraft-server.service
 
 # enables services and reboots
 sudo systemctl daemon-reload
 sudo systemctl enable cec-name.service
 sudo systemctl enable home-automation.service
+sudo systemctl enable minecraft-server.service
 sudo reboot
