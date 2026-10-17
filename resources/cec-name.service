@@ -1,0 +1,11 @@
+[Unit]
+Description=Set Raspberry Pi HDMI CEC name so it is correctly displayed on my TV
+After=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cec-ctl -d /dev/cec0 --playback --osd-name "Raspberry Pi"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

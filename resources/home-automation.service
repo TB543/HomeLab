@@ -1,0 +1,11 @@
+[Unit]
+Description=Automatically matches the light switch state to all smart plugs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
