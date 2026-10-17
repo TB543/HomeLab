@@ -40,6 +40,7 @@ EOF
 
 # sets up remote connection
 curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale set --advertise-exit-node
 sudo tailscale up
 
 # sets up home automation
@@ -52,7 +53,12 @@ sudo sed -i "/^\[Service\]/a WorkingDirectory=$(pwd)\nExecStart=$(pwd)/venv/bin/
 # sets up minecraft server
 cd ../minecraft-server
 sudo apt install -y docker-compose
-curl -fsSL https://packages.playit.gg/install.sh | bash
+curl -SsL https://packages.playit.gg/keys/playit.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/playit.gpg >/dev/null
+sudo chmod 0644 /usr/share/keyrings/playit.gpg
+sudo curl -fsSL -o /etc/apt/sources.list.d/playit.list https://packages.playit.gg/repo-files/playit-debian.list
+sudo apt update
+sudo apt install playit
+sudo playit
 sudo sed -i "/^\[Service\]/a WorkingDirectory=$(pwd)" /etc/systemd/system/minecraft-server.service
 
 # enables services and reboots
