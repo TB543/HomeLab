@@ -8,7 +8,9 @@ read -p "Enter WiFi name: " WIFI_SSID
 read -p "Enter WiFi password: " WIFI_PASS
 
 # creates system services to run everything
+cp .xinitrc ~/.xinitrc
 sudo cp cec-name.service /etc/systemd/system/
+sudo cp app-launcher.service /etc/systemd/system/
 sudo cp home-automation.service /etc/systemd/system/
 sudo cp minecraft-server.service /etc/systemd/system/
 
@@ -43,8 +45,15 @@ curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
 sudo tailscale set --advertise-exit-node
 
+# sets up the app launcher
+sudo apt install -y xserver-xorg x11-xserver-utils xinit fonts-noto-color-emoji
+cd ../services/app-launcher
+python -m venv --system-site-packages venv
+venv/bin/pip install -r requirements.txt
+sudo sed -i "/^\[Service\]/a User=$(whoami)" /etc/systemd/system/app-launcher.service
+
 # sets up home automation
-cd ../services/home-automation
+cd ../home-automation
 python -m venv --system-site-packages venv
 venv/bin/pip install -r requirements.txt
 venv/bin/python main.py "$KASA_USER" "$KASA_PASS"
@@ -64,6 +73,7 @@ sudo sed -i "/^\[Service\]/a WorkingDirectory=$(pwd)" /etc/systemd/system/minecr
 # enables services and reboots
 sudo systemctl daemon-reload
 sudo systemctl enable cec-name.service
+sudo systemctl enable app-launcher.service
 sudo systemctl enable home-automation.service
 sudo systemctl enable minecraft-server.service
 sudo reboot
