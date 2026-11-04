@@ -2,12 +2,14 @@ import asyncio
 from asyncio import run_coroutine_threadsafe
 from sys import argv
 from json import load, dump
+from threading import Thread
 from RPi.GPIO import setmode, BCM, setup, IN, add_event_detect, BOTH, input
 from kasa import Credentials, Discover
 from kasa.deviceconfig import DeviceConfig
 from kasa.protocols import IotProtocol
 from kasa.transports.klaptransport import KlapTransportV2
 from kasa.iot import IotPlug
+from flask import Flask, request
 
 
 async def create_device(ip, username, password):
@@ -24,7 +26,9 @@ async def create_device(ip, username, password):
     credentials = Credentials(username, password)
     config = DeviceConfig(host=ip, credentials=credentials)
     protocol = IotProtocol(transport=KlapTransportV2(config=config))
-    return IotPlug(host=ip, protocol=protocol)
+    device = IotPlug(host=ip, protocol=protocol)
+    device.state = None
+    return device
 
 
 async def set_plugs(state, devices):
@@ -36,6 +40,7 @@ async def set_plugs(state, devices):
     """
 
     for device in devices:
+        device.state = state
         if state:
             await device.turn_on()
         else:
@@ -69,6 +74,17 @@ async def main():
     loop = asyncio.get_event_loop()
     add_event_detect(16, BOTH, lambda e: run_coroutine_threadsafe(set_plugs(input(16), devices), loop))
     run_coroutine_threadsafe(set_plugs(input(16), devices), loop)
+
+    # creates flask app
+    app = Flask("Home Automation")
+    @app.route("/", methods=["POST", "GET"])
+    def server():
+        if request.method == "POST":
+            run_coroutine_threadsafe(set_plugs(not devices[0].state, devices), loop)
+        return "ON" if devices[0].state else "OFF"
+
+    # starts program
+    Thread(target=lambda: app.run(port=5001), daemon=True).start()
     await asyncio.Event().wait()
 
 

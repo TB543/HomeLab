@@ -1,5 +1,5 @@
 from logging import root
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, run
 from requests import post, get
 from json import load, dump
 from threading import Thread
@@ -27,7 +27,6 @@ def user_input():
             cec = line.split(" ")[1]
 
             # controls this program
-            print(root.winfo_viewable())
             if root.winfo_viewable():
                 prev = app_grid["active"]
                 root.after(0, lambda: app_grid[prev].configure(fg_color=app_grid[prev].cget("hover_color"), hover_color=app_grid[prev].cget("fg_color")))
@@ -48,8 +47,10 @@ def user_input():
 
             # sends control to running program
             else:
-                print("test")
-                post("http://localhost:5000", json={"input": cec})
+                try:
+                    post("http://localhost:5000", json={"input": cec})
+                except:
+                    pass
 
 
 def launch_app(command):
@@ -82,6 +83,10 @@ def update_ui():
         cpu_temp.set(f"{sensors_temperatures()['cpu_thermal'][0].current:.1f}°C")
         disk.set(f"{disk_usage('/').percent}%")
 
+    # updates button statuses
+    for button in app_grid["status_btns"]:
+        button.update_status()
+
     # only updates weather every minute
     if prev_min == time.get()[-4]:
         return
@@ -89,8 +94,8 @@ def update_ui():
     # gets the weather
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "latitude": 35.2271,
-        "longitude": -80.8431,
+        "latitude": settings["lat"],
+        "longitude": settings["long"],
         "daily": "moon_phase",
         "current": ["temperature_2m", "weather_code", "is_day"],
         "timezone": "America/New_York",
@@ -152,7 +157,7 @@ try:
 # if file doesn't exist create it. key is display name of app, value is the command to run it
 except:
     with open("settings.json", "w") as f:
-        dump({"Reboot System": {"args": "sudo reboot", "cwd": None}}, f, indent=4)
+        dump({"lat": 35.2271, "long": -80.8431, "apps": [{"name": "Reboot System", "cmd": {"args": "sudo reboot", "cwd": None}}]}, f, indent=4)
         print("config file created, edit before running again")
         exit(0)
 
@@ -185,11 +190,16 @@ CTkLabel(top, textvariable=weather_str, font=("Rubik", 24)).grid(row=1, column=3
 CTkLabel(root, text="Apps:", font=("Rubik", 24, "bold")).pack(anchor="w", padx=24)
 apps = CTkScrollableFrame(root)
 apps.pack(fill="both", expand=True, padx=24)
-app_grid = {"active": (0, 0)}
-for i, (name, command) in enumerate(settings.items()):
-    btn = CTkButton(apps, height=150, text=name, font=("Rubik", 64, "bold"), command=lambda cmd=command: launch_app(cmd))
+app_grid = {"active": (0, 0), "status_btns": []}
+for i, app in enumerate(settings["apps"]):
+    btn = CTkButton(apps, height=150, text=app["name"], font=("Rubik", 64, "bold"), command=lambda cmd=app["cmd"]: launch_app(cmd))
     btn.grid(row=i // 3, column=i % 3, sticky="nsew", padx=12, pady=12)
     app_grid[i // 3, i % 3] = btn
+
+    # adds status functionality to buttons that have a status
+    if "status" in app: 
+        app_grid["status_btns"].append(btn)
+        btn.update_status = lambda b=btn, a=app: b.configure(text=f"{a['name']} {'🔴' if run(**a['status'], shell=True).returncode else '🟢'}")
 app_grid[app_grid["active"]].configure(fg_color=app_grid[app_grid["active"]].cget("hover_color"), hover_color=app_grid[app_grid["active"]].cget("fg_color"))
 
 # creates bottom section of the UI
@@ -203,7 +213,6 @@ CTkLabel(bottom, textvariable=cpu, font=("Rubik", 64, "bold")).grid(row=1, colum
 CTkLabel(bottom, textvariable=ram, font=("Rubik", 64, "bold")).grid(row=1, column=1, pady=24)
 CTkLabel(bottom, textvariable=cpu_temp, font=("Rubik", 64, "bold")).grid(row=1, column=2, pady=24)
 CTkLabel(bottom, textvariable=disk, font=("Rubik", 64, "bold")).grid(row=1, column=3, pady=24)
-
 
 # final UI setup and starts the program
 apps.columnconfigure(0, weight=1, uniform="col")
