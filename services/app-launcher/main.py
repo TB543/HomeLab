@@ -27,6 +27,7 @@ def user_input():
             cec = line.split(" ")[1]
 
             # controls this program
+            print(root.winfo_viewable())
             if root.winfo_viewable():
                 prev = app_grid["active"]
                 root.after(0, lambda: app_grid[prev].configure(fg_color=app_grid[prev].cget("hover_color"), hover_color=app_grid[prev].cget("fg_color")))
@@ -40,13 +41,14 @@ def user_input():
                     case "right":
                         app_grid["active"] = (app_grid["active"][0], (app_grid["active"][1] + 1))
                     case "select":
-                        app_grid[app_grid["active"]].invoke()
+                        root.after(0, app_grid[app_grid["active"]].invoke)
                 if app_grid["active"] not in app_grid: app_grid["active"] = prev
                 root.after(0, lambda: app_grid[app_grid["active"]].configure(fg_color=app_grid[app_grid["active"]].cget("hover_color"), hover_color=app_grid[app_grid["active"]].cget("fg_color")))
                 root.after(0, lambda: apps._parent_canvas.yview_moveto(max(0, min(1, (app_grid[app_grid["active"]].winfo_y() if app_grid[app_grid["active"]].winfo_y() < apps._parent_canvas.canvasy(0) else app_grid[app_grid["active"]].winfo_y() + app_grid[app_grid["active"]].winfo_height() - apps._parent_canvas.winfo_height()) / apps._parent_canvas.bbox("all")[3]))) if app_grid[app_grid["active"]].winfo_y() < apps._parent_canvas.canvasy(0) or app_grid[app_grid["active"]].winfo_y() + app_grid[app_grid["active"]].winfo_height() > apps._parent_canvas.canvasy(0) + apps._parent_canvas.winfo_height() else None)
 
             # sends control to running program
             else:
+                print("test")
                 post("http://localhost:5000", json={"input": cec})
 
 
@@ -58,8 +60,7 @@ def launch_app(command):
     """
 
     root.withdraw()
-    Popen(**command, shell=True).wait()
-    root.deiconify()
+    Thread(target=lambda: [Popen(**command, shell=True).wait(), root.deiconify()], daemon=True).start()
 
 
 def update_ui():
@@ -95,9 +96,12 @@ def update_ui():
         "timezone": "America/New_York",
         "temperature_unit": "fahrenheit",
     }
-    response = get(url, params=params)
-    data = response.json()
-    current = data["current"]
+    try:
+        response = get(url, params=params)
+        data = response.json()
+        current = data["current"]
+    except:
+        return
 
     # weather code mappings
     moon_phase = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"][round(data["daily"]["moon_phase"][0] * 8) % 8]
@@ -156,6 +160,7 @@ except:
 updates = 0
 root = CTk()
 root.geometry("3840x2160")
+root.configure(cursor="none")
 time = StringVar(root)
 date = StringVar(root)
 weather_emoji = StringVar(root)
