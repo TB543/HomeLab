@@ -187,7 +187,7 @@ CTkLabel(top, textvariable=outside_temp, font=("Rubik", 64, "bold")).grid(row=0,
 CTkLabel(top, textvariable=weather_str, font=("Rubik", 24)).grid(row=1, column=3, sticky="nw", padx=24)
 
 # creates app launcher
-CTkLabel(root, text="Apps:", font=("Rubik", 24, "bold")).pack(anchor="w", padx=24)
+CTkLabel(root, text="Services & Apps:", font=("Rubik", 24, "bold")).pack(anchor="w", padx=24)
 apps = CTkScrollableFrame(root)
 apps.pack(fill="both", expand=True, padx=24)
 app_grid = {"active": (0, 0), "status_btns": []}
